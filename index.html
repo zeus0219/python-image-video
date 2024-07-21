@@ -1,0 +1,50 @@
+<html>
+    <head>
+        <title>Browser native streaming</title>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <td><h1>MPEG-4</h1></td>
+                <td><h1>MJPEG</h1></td>
+            </tr>
+            <tr>
+                <td>
+                    <video id="video" src="http://localhost:20000/live/mpeg4" type="video/mp4" height="480" width="720" autoplay muted></video>
+                </td>
+                <td>
+                    <img src="http://localhost:20000/live/mjpeg" height="480" width="720">
+                </td>
+            </tr>
+        </table>
+        <h1>
+            <div id="timediff"></div>
+            <div id="time"></div>
+        </h1>
+        <script>
+
+            // store HTML elements
+            let video = document.getElementById("video")
+            let time = document.getElementById("time")
+            let diff = document.getElementById("timediff")
+
+            // dynamically update real time
+            setInterval(() => {
+                time.textContent = `Time: ${new Date().toLocaleString()}`
+                diff.textContent = `Buffer: ${(video.duration - video.currentTime).toFixed(2)}s`
+            }, 100)
+
+            // rewind to latest data and play
+            video.onloadeddata = (ev) => {
+                video.currentTime = video.duration
+                video.play()
+            }
+
+            // dynamic playback rate for catching up with the buffer
+            video.ondurationchange = (ev) => {
+                video.playbackRate =  Math.min(Math.max(0.5 + (video.duration - video.currentTime), 1.0), 2.0)
+            }
+
+        </script>
+    </body>
+</html>
