@@ -2,14 +2,29 @@
 
 from typing import Any, Generator
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import HTMLResponse,StreamingResponse
 from uvicorn import run
-
+import cv2  
+camera = cv2.VideoCapture(0)  # Use 0 for the default camera  
 from encoders.encoder import Encoder
 from utils.streaming_utils import method_to_encoder, frame_stream
+def generate_frames():  
+    while True:  
+        success, frame = camera.read()  # Capture frame-by-frame  
+        if not success:  
+            break  
+        else:  
+            # Encode the frame in JPEG format  
+            ret, buffer = cv2.imencode('.jpg', frame)  
+            frame = buffer.tobytes()  
+
+            # Yield the output frame in the specific format required for streaming  
+            yield (b'--frame\r\n'  
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  
+
+
 
 app = FastAPI()
-
 @app.get("/live/{method}")
 async def live(method: str):
     """
@@ -29,8 +44,33 @@ async def live(method: str):
     # encode and return chunks
     return StreamingResponse(stream, media_type=encoder.get_content_type(), background=_end_stream)
 
+@app.get("/video_feed")  
+async def video_feed():  
+    return StreamingResponse(generate_frames(), media_type='multipart/x-mixed-replace; boundary=frame')  
+@app.get("/", response_class=HTMLResponse)  
+async def index():  
+    # Simple HTML page to display the video feed  
+    return """  
+    <!doctype html>  
+    <html>  
+        <head>  
+            <title>Camera Stream</title>  
+        </head>  
+        <body>  
+            <h1>Video Stream</h1>  
+            <img src="/video_feed" width="640" height="480">  
+        </body>  
+    </html>  
+    """  
+
 def main():
     run("server:app", host="0.0.0.0", port=20000, workers=10)
 
 if __name__ == "__main__":
-    main()
+    try:  
+        main()
+    except KeyboardInterrupt:  
+        pass  
+    finally:  
+        # Release the camera when the server stops  
+        camera.release()  

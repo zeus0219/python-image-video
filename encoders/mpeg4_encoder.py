@@ -2,6 +2,7 @@ from subprocess import DEVNULL, PIPE, Popen
 from threading import Thread
 from typing import Any, Generator
 from encoders.encoder import Encoder
+import cv2
 
 DESIRED_FPS: int = 60
 FRAMES_PER_KEYFRAME: int = 1
