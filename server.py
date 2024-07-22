@@ -15,7 +15,9 @@ def generate_frames():
             break  
         else:  
             # Encode the frame in JPEG format  
-            ret, buffer = cv2.imencode('.jpg', frame)  
+            processed_frame = cv2.bitwise_not(frame)  
+            cv2.putText(processed_frame, "Mobile Camera Stream", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)  # Red text  
+            ret, buffer = cv2.imencode('.jpg', processed_frame)  
             frame = buffer.tobytes()  
 
             # Yield the output frame in the specific format required for streaming  
